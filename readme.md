@@ -9,9 +9,9 @@ It combines on-chain data from [Nodit Web3 API](https://developer.nodit.io) with
 
 - **/daily**\
   • Top 5 trending tokens on supported chain
-- **/check **``** **``\
+- **/check **\
   Detailed on-chain metrics: created time, txns, holders count and etc.
-- **/summary **``** **``\
+- **/summary **\
   AI-powered natural-language summary of a token’s on-chain profile and recent trends
 - **Cross-chain support**\
   Ethereum · Base · Polygon
