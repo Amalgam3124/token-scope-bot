@@ -2,6 +2,7 @@
 import os
 import logging
 from dotenv import load_dotenv
+import asyncio
 
 from telegram import Update, BotCommand
 from telegram.ext import Application, CommandHandler, ContextTypes, JobQueue, CallbackQueryHandler
@@ -11,11 +12,18 @@ from handlers.daily import daily_hot_list
 from handlers.summary import summary_command, summary_callback
 from handlers.check import check_command
 from handlers.analysis import analysis_command
+from handlers.wallet import (
+    create_wallet_command,
+    import_wallet_command,
+    delete_wallet_command,
+    balance_command,
+    wallet_callback
+)
 
 
 load_dotenv()
 
-BOT_TOKEN = os.getenv("BOT_TOKEN")
+BOT_TOKEN: str = os.getenv("BOT_TOKEN") or ""
 if not BOT_TOKEN:
     raise ValueError("Error: BOT_TOKEN is not configured in .env file.")
 
@@ -29,17 +37,23 @@ logger = logging.getLogger(__name__)
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not update.message:
         return
-    
+
     welcome_text = (
-        "Welcome to the Nodit TokenScope Bot\\!\n\n"
-        "*Available commands:*\n"
-        "`/daily` \\- Get the top trending tokens\\.\n"
-        "`/summary <rank>` \\- Get an AI analysis for a token from the daily list\\.\n"
-        "`/check <chain> <address>` \\- Get a quick overview of a token\\.\n"
-        "`/analysis <chain> <address>` \\- Get a detailed AI analysis of a token\\.\n\n"
-        "Just type a command to get started\\!"
+        "Welcome to the Nodit TokenScope Bot!\n\n"
+        "Available commands:\n"
+        "/daily - Get the top trending tokens\n"
+        "/summary <rank> - Get an AI analysis for a token from the daily list\n"
+        "/check <chain> <address> - Get a quick overview of a token\n"
+        "/analysis <chain> <address> - Get a detailed AI analysis of a token\n\n"
+        "Wallet Commands:\n"
+        "/create - Create a new wallet\n"
+        "/import <private_key> - Import existing wallet\n"
+        "/wallets - List your wallet\n"
+        "/delete - Delete your wallet\n"
+        "/balance [chain] [token_address] - Check wallet balance\n\n"
+        "Just type or tap a command to get started!"
     )
-    await update.message.reply_text(welcome_text, parse_mode=ParseMode.MARKDOWN_V2)
+    await update.message.reply_text(welcome_text)
 
 async def set_bot_commands(context: ContextTypes.DEFAULT_TYPE) -> None:
     """Sets the bot's commands in the Telegram UI for user convenience."""
@@ -51,6 +65,10 @@ async def set_bot_commands(context: ContextTypes.DEFAULT_TYPE) -> None:
             BotCommand("summary", "AI summary for a daily token"),
             BotCommand("check", "Quick token overview"),
             BotCommand("analysis", "Detailed AI analysis"),
+            BotCommand("create", "Create new wallet"),
+            BotCommand("import", "Import existing wallet"),
+            BotCommand("delete", "Delete your wallet"),
+            BotCommand("balance", "Check wallet balance"),
         ]
         await application.bot.set_my_commands(commands)
 
@@ -60,23 +78,26 @@ async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> N
 
 def main() -> None:
     print("Starting bot...")
-    
+
     application = Application.builder().token(BOT_TOKEN).build()
-    
+
+    # Register commands on startup using job_queue (safe for event loop)
+    if application.job_queue:
+        application.job_queue.run_once(set_bot_commands, 0, data=application)
+
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("help", start))
     application.add_handler(CommandHandler("daily", daily_hot_list))
     application.add_handler(CommandHandler("summary", summary_command))
     application.add_handler(CommandHandler("check", check_command))
     application.add_handler(CommandHandler("analysis", analysis_command))
-
+    application.add_handler(CommandHandler("create", create_wallet_command))
+    application.add_handler(CommandHandler("import", import_wallet_command))
+    application.add_handler(CommandHandler("delete", delete_wallet_command))
+    application.add_handler(CommandHandler("balance", balance_command))
     application.add_handler(CallbackQueryHandler(summary_callback, pattern="^summary_"))
-
+    application.add_handler(CallbackQueryHandler(wallet_callback, pattern="^(delete_wallet_|balance_)"))
     application.add_error_handler(error_handler)
-    
-    if application.job_queue:
-        application.job_queue.run_once(set_bot_commands, 0, data=application)
-
     print("Bot is running. Press Ctrl-C to stop.")
     application.run_polling()
 

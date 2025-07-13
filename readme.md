@@ -9,12 +9,34 @@ It combines on-chain data from [Nodit Web3 API](https://developer.nodit.io) with
 
 - **/daily**\
   • Top 5 trending tokens on supported chain
-- **/check **``** **``\
+- **/check <chain> <token_address>**\
   Detailed on-chain metrics: created time, txns, holders count and etc.
-- **/summary **``** **``\
+- **/summary <chain> <token_address>**\
   AI-powered natural-language summary of a token’s on-chain profile and recent trends
+- **/create**\
+  • Create a new wallet for the user
+- **/import <private_key>**\
+  • Import existing wallet with private key
+- **/delete**\
+  • Delete your wallet
+- **/balance [chain] [token_address]**\
+  • Check wallet balance on specified chain
 - **Cross-chain support**\
-  Ethereum · Base · Polygon
+  Ethereum · Base · Polygon · Arbitrum
+
+---
+
+## 🏦 Wallet Security & Encryption
+
+- All wallet private keys are encrypted using a Fernet symmetric key before being stored in the database.
+- **Encryption key source:**
+  - By default, the key is generated and saved to `wallet_key.key` in the project root.
+  - **Recommended:** Set the encryption key as an environment variable `WALLET_ENCRYPTION_KEY` for better security.
+- If you lose the encryption key, you will not be able to decrypt any previously stored wallets!
+- To generate a new key, run:
+  ```bash
+  python generate_key.py
+  ```
 
 ---
 
@@ -26,6 +48,10 @@ It combines on-chain data from [Nodit Web3 API](https://developer.nodit.io) with
 | `/daily`                           | Show top 5 trending tokens on supported chain            |
 | `/check <chain> <token_address>`   | Fetch token metrics for `<token_address>` on `<chain>`   |
 | `/summary <chain> <token_address>` | Generate an AI summary of `<token_address>` on `<chain>` |
+| `/create`                          | Create a new wallet                                     |
+| `/import <private_key>`            | Import an existing wallet                                |
+| `/delete`                          | Delete your wallet                                      |
+| `/balance [chain] [token_address]` | Check wallet balance                                     |
 
 ---
 
@@ -71,7 +97,15 @@ NODIT_API_KEY=your_nodit_api_key
 OPENROUTER_API_KEY=your_openrouter_api_key
 OPENROUTER_API_BASE=https://openrouter.ai/api/v1
 
+# (Optional) Wallet encryption key
+# Generate with: python generate_key.py
+WALLET_ENCRYPTION_KEY=your_base64_fernet_key
 ```
+
+> **Security Note:**
+> - If `WALLET_ENCRYPTION_KEY` is not set, a new key will be generated and saved to `wallet_key.key`.
+> - For best security, set `WALLET_ENCRYPTION_KEY` as an environment variable (do not commit it to version control).
+> - Losing this key means you cannot decrypt any previously stored wallets!
 
 ### 5. Run the Bot
 
@@ -88,7 +122,7 @@ python bot.py
 | Ethereum | `ethereum` |
 | Base     | `base`     |
 | Optimism | `optimism` |
-
+| Arbitrum | `Arbitrum` |
 ---
 
 ## 🏗️ Architecture Overview
