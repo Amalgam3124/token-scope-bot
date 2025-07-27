@@ -17,6 +17,8 @@ It combines on-chain data from [Nodit Web3 API](https://developer.nodit.io) with
 - **/import <private_key>** - Import existing wallet with private key
 - **/delete** - Delete your wallet securely
 - **/balance [chain] [token_address]** - Check wallet balance on specified chain
+- **/buy <chain> <contract_address> [amount]** - Buy tokens using your wallet
+- **/send <chain> <address> <amount> <token>** - Send tokens to another address
 
 ### 🌐 Cross-chain Support
 Ethereum · Base · Polygon · Arbitrum · Optimism
@@ -49,10 +51,39 @@ Ethereum · Base · Polygon · Arbitrum · Optimism
 | `/import <private_key>`            | Import an existing wallet                                | `/import 0xabcd...`                        |
 | `/delete`                          | Delete your wallet                                      | `/delete`                                  |
 | `/balance [chain] [token_address]` | Check wallet balance                                     | `/balance ethereum` or `/balance ethereum 0x1234...` |
+| `/buy <chain> <contract_address> [amount]` | Buy tokens using your wallet                     | `/buy ethereum 0x1234... 0.1`              |
+| `/send <chain> <address> <amount> <token>` | Send tokens to another address                   | `/send ethereum 0x1234... 0.1 eth`         |
 
 ---
 
 ## 🛠️ Setup & Installation
+
+### 🚀 Quick Setup
+
+1. **Clone and setup**:
+   ```bash
+   git clone https://github.com/Amalgam3124/token-scope-bot.git
+   cd token-scope-bot
+   python -m venv venv
+   .\venv\Scripts\activate  # Windows
+   pip install -r requirements.txt
+   ```
+
+2. **Configure environment**:
+   ```bash
+   cp .env_example .env
+   # Edit .env file with your API keys
+   ```
+
+3. **Verify setup**:
+   ```bash
+   python check_env.py
+   ```
+
+4. **Run the bot**:
+   ```bash
+   python bot.py
+   ```
 
 ### 1. Prerequisites
 
@@ -101,6 +132,14 @@ OPENROUTER_API_BASE=https://openrouter.ai/api/v1
 # Wallet Encryption (Optional - will auto-generate if not set)
 # Generate with: python generate_key.py
 WALLET_ENCRYPTION_KEY=your_base64_fernet_key
+
+# Blockchain RPC Configuration (REQUIRED for real transactions)
+# Get free API keys from: https://www.alchemy.com/
+ALCHEMY_API_KEY=your_alchemy_api_key
+
+# 1inch API Configuration (REQUIRED for real swaps)
+# Get free API key from: https://portal.1inch.dev/
+ONEINCH_API_KEY=your_1inch_api_key
 ```
 
 > **🔒 Security Notes:**
@@ -108,6 +147,13 @@ WALLET_ENCRYPTION_KEY=your_base64_fernet_key
 > - For best security, set `WALLET_ENCRYPTION_KEY` as an environment variable (do not commit it to version control)
 > - Losing this key means you cannot decrypt any previously stored wallets!
 > - Always keep your `.env` file secure and never commit it to version control
+
+> **📋 Feature Requirements:**
+> - **Basic Features**: Only `BOT_TOKEN` and `NODIT_API_KEY` required
+> - **Balance Checking**: Requires `ALCHEMY_API_KEY`
+> - **Real Trading**: Requires `ONEINCH_API_KEY`
+> - **AI Summaries**: Requires `OPENROUTER_API_KEY`
+> - **Wallet Encryption**: Optional, auto-generated if not set
 
 ### 5. Generate Encryption Key (Optional)
 
@@ -119,7 +165,17 @@ python generate_key.py
 
 This will generate a new encryption key and provide instructions on how to use it.
 
-### 6. Run the Bot
+### 6. Verify Environment Variables (Optional)
+
+Run the environment check script to verify your configuration:
+
+```bash
+python check_env.py
+```
+
+This will show you which features are available based on your API keys.
+
+### 7. Run the Bot
 
 ```bash
 python bot.py
@@ -172,8 +228,17 @@ Generates a natural language summary of the token's performance and trends.
 /import 0xabcd...         # Import existing wallet
 /balance ethereum         # Check ETH balance
 /balance base 0x1234...   # Check specific token balance
+/buy ethereum 0x1234... 0.1  # Buy tokens
 /delete                   # Delete wallet
 ```
+
+### Token Buying
+The `/buy` command allows you to purchase tokens using your wallet. The process includes:
+1. **Estimation**: Get an estimate of how many tokens you'll receive
+2. **Confirmation**: Review the transaction details and confirm
+3. **Execution**: Execute the buy transaction (simulated for demo purposes)
+
+**🚀 Real Transactions**: The implementation now uses real 1inch API for token swaps on the blockchain. Make sure you have sufficient ETH balance and understand the risks involved.
 
 ---
 
@@ -191,11 +256,15 @@ TokenScope/
 │   ├── check.py          # /check command logic
 │   ├── summary.py        # /summary command logic
 │   ├── analysis.py       # /analysis command logic
+│   ├── buy.py            # /buy command logic
+│   ├── send.py           # /send command logic
 │   └── wallet.py         # Wallet management commands
 ├── services/             # External service integrations
 │   ├── nodit_api.py      # Nodit Web3 API client
 │   ├── ai_service.py     # OpenRouter AI service
 │   ├── balance_service.py # Balance checking service
+│   ├── buy_service.py    # Token buying service
+│   ├── send_service.py    # Token sending service
 │   └── trending.py       # Dexscreener trending data
 └── utils/                # Utility functions
     ├── chains.py         # Supported chains configuration
@@ -216,6 +285,8 @@ TokenScope/
 | `OPENROUTER_API_KEY` | No | OpenRouter API key for AI summaries |
 | `OPENROUTER_API_BASE` | No | OpenRouter API base URL (default: https://openrouter.ai/api/v1) |
 | `WALLET_ENCRYPTION_KEY` | No | Fernet encryption key for wallet security |
+| `ALCHEMY_API_KEY` | Yes* | Alchemy API key for blockchain transactions (*required for buy functionality) |
+| `ONEINCH_API_KEY` | Yes* | 1inch API key for token swaps (*required for buy functionality) |
 
 ### API Rate Limits
 

@@ -19,6 +19,8 @@ from handlers.wallet import (
     balance_command,
     wallet_callback
 )
+from handlers.buy import buy_command, buy_callback
+from handlers.send import send_command, send_callback
 
 
 load_dotenv()
@@ -50,7 +52,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         "/import <private_key> - Import existing wallet\n"
         "/wallets - List your wallet\n"
         "/delete - Delete your wallet\n"
-        "/balance [chain] [token_address] - Check wallet balance\n\n"
+        "/balance [chain] [token_address] - Check wallet balance\n"
+        "/buy <chain> <contract_address> [amount] - Buy tokens\n"
+        "/send <chain> <address> <amount> <token> - Send tokens\n\n"
         "Just type or tap a command to get started!"
     )
     await update.message.reply_text(welcome_text)
@@ -69,6 +73,8 @@ async def set_bot_commands(context: ContextTypes.DEFAULT_TYPE) -> None:
             BotCommand("import", "Import existing wallet"),
             BotCommand("delete", "Delete your wallet"),
             BotCommand("balance", "Check wallet balance"),
+            BotCommand("buy", "Buy tokens"),
+            BotCommand("send", "Send tokens"),
         ]
         await application.bot.set_my_commands(commands)
 
@@ -95,8 +101,12 @@ def main() -> None:
     application.add_handler(CommandHandler("import", import_wallet_command))
     application.add_handler(CommandHandler("delete", delete_wallet_command))
     application.add_handler(CommandHandler("balance", balance_command))
+    application.add_handler(CommandHandler("buy", buy_command))
+    application.add_handler(CommandHandler("send", send_command))
     application.add_handler(CallbackQueryHandler(summary_callback, pattern="^summary_"))
     application.add_handler(CallbackQueryHandler(wallet_callback, pattern="^(delete_wallet_|balance_)"))
+    application.add_handler(CallbackQueryHandler(buy_callback, pattern="^(confirm_buy_|cancel_buy|insufficient_balance)"))
+    application.add_handler(CallbackQueryHandler(send_callback, pattern="^(confirm_send_|cancel_send|insufficient_balance_send)"))
     application.add_error_handler(error_handler)
     print("Bot is running. Press Ctrl-C to stop.")
     application.run_polling()
